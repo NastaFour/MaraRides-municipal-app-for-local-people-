@@ -1,0 +1,27 @@
+{
+  "name": "mototaxi-system",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "packages/api",
+    "packages/dashboard",
+    "packages/mobile"
+  ],
+  "scripts": {
+    "api": "npm run dev --workspace=packages/api",
+    "dashboard": "npm run dev --workspace=packages/dashboard",
+    "dev": "concurrently \"npm run api\" \"npm run dashboard\"",
+    "build": "npm run build --workspaces --if-present"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "expo-linking": "^55.0.13",
+    "react-native-safe-area-context": "^5.7.0",
+    "react-native-screens": "^4.24.0",
+    "webidl-conversions": "^5.0.0"
+  }
+}

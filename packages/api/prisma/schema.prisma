@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum DriverStatus {
+  ONLINE
+  OFFLINE
+  IN_TRIP
+}
+
+enum TripStatus {
+  REQUESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String   @unique
+  email     String?  @unique
+  password  String
+  role      Role     @default(CLIENT)
+  createdAt DateTime @default(now())
+
+  trips Trip[] @relation("ClientTrips")
+
+  @@map("users")
+}
+
+model Driver {
+  id         String       @id @default(uuid())
+  name       String
+  phone      String       @unique
+  password   String
+  licenseNum String       @unique
+  status     DriverStatus @default(OFFLINE)
+  isApproved Boolean      @default(false)
+  latitude   Float?
+  longitude  Float?
+  createdAt  DateTime     @default(now())
+
+  vehicle Vehicle?
+  trips   Trip[]
+
+  @@map("drivers")
+}
+
+model Vehicle {
+  id       String @id @default(uuid())
+  plate    String @unique
+  model    String
+  year     Int
+  driverId String @unique
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("vehicles")
+}
+
+model Trip {
+  id            String     @id @default(uuid())
+  clientId      String
+  driverId      String?
+  originLat     Float
+  originLng     Float
+  destLat       Float
+  destLng       Float
+  originAddress String
+  destAddress   String
+  status        TripStatus @default(REQUESTED)
+  fare          Float?
+  createdAt     DateTime   @default(now())
+  completedAt   DateTime?
+
+  client User    @relation("ClientTrips", fields: [clientId], references: [id])
+  driver Driver? @relation(fields: [driverId], references: [id])
+
+  @@map("trips")
+}

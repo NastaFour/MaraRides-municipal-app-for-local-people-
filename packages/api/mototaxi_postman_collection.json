@@ -1,0 +1,38 @@
+{
+  "info": {
+    "name": "Mototaxi API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        { "name": "Login (Admin/Client)", "request": { "method": "POST", "url": "{{api_url}}/auth/client/login", "body": { "mode": "raw", "raw": "{\"phone\": \"0000000000\", \"password\": \"admin123\"}", "options": { "raw": { "language": "json" } } } } },
+        { "name": "Login Driver", "request": { "method": "POST", "url": "{{api_url}}/auth/driver/login", "body": { "mode": "raw", "raw": "{\"phone\": \"0416-1111111\", \"password\": \"conductor123\"}", "options": { "raw": { "language": "json" } } } } }
+      ]
+    },
+    {
+      "name": "Drivers",
+      "item": [
+        { "name": "Get All (Admin)", "request": { "method": "GET", "url": "{{api_url}}/drivers", "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" } ] } }
+      ]
+    },
+    {
+      "name": "Trips",
+      "item": [
+        { "name": "Request Trip (Client)", "request": { "method": "POST", "url": "{{api_url}}/trips", "header": [ { "key": "Authorization", "value": "Bearer {{client_token}}" } ], "body": { "mode": "raw", "raw": "{\"originLat\": 10.48, \"originLng\": -66.90, \"destLat\": 10.49, \"destLng\": -66.91, \"originAddress\": \"Origen\", \"destAddress\": \"Destino\", \"fare\": 5.0}", "options": { "raw": { "language": "json" } } } } }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        { "name": "Get Driver Vehicles", "request": { "method": "GET", "url": "{{api_url}}/vehicles/{{driver_id}}", "header": [ { "key": "Authorization", "value": "Bearer {{admin_token}}" } ] } }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "api_url", "value": "http://localhost:3001" },
+    { "key": "admin_token", "value": "" },
+    { "key": "client_token", "value": "" }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleDebug"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://TU-DOMINIO-RAILWAY.up.railway.app"
+      }
+    },
+    "production": {
+      "android": {
+        "buildType": "aab"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://TU-DOMINIO-RAILWAY.up.railway.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

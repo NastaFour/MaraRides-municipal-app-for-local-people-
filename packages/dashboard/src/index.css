@@ -1,0 +1,368 @@
+/* ============================================================
+   Tailwind v4 — CSS-first configuration
+   @tailwind directives replaced by @import + @theme
+   ============================================================ */
+@import "tailwindcss";
+
+/* ── v4 theme tokens (replaces tailwind.config.js theme section) ── */
+@theme {
+  /* Fonts */
+  --font-display: "Anton", "Impact", sans-serif;
+  --font-mono:    "JetBrains Mono", "Roboto Mono", monospace;
+  --font-sans:    "Space Grotesk", sans-serif;
+
+  /* Colors */
+  --color-accent:         #CCFF00;
+  --color-accent-cyan:    #00FFFF;
+  --color-danger:         #FF3300;
+  --color-warn:           #FFB800;
+  --color-surface:        #111111;
+  --color-surface-deep:   #050505;
+  --color-surface-elevated: #1C1C1C;
+  --color-surface-border: #2A2A2A;
+  --color-text-primary:   #F0F0F0;
+  --color-text-muted:     #666666;
+  --color-text-faint:     #333333;
+
+  /* Box shadows */
+  --shadow-hard-accent:  4px 4px 0px #CCFF00;
+  --shadow-hard-cyan:    4px 4px 0px #00FFFF;
+  --shadow-hard-danger:  4px 4px 0px #FF3300;
+  --shadow-hard-sm:      2px 2px 0px #CCFF00;
+}
+
+/* ============================================================
+   GRAPHIC REALISM — CSS DESIGN TOKENS
+   Estética: Industrial Cyberpunk / Corporate Terminal
+   Referencia: complement.md
+   ============================================================ */
+
+:root {
+  /* Background — deep charcoal, NOT pure black. Contrast with surfaces */
+  --clr-bg:       #0d0f12;
+  --clr-surface:  #1a1d22;
+  --clr-elevated: #22262d;
+  --clr-border:   #3a3f4a;
+  --clr-accent:   #CCFF00;
+  --clr-cyan:     #00FFFF;
+  --clr-danger:   #FF3300;
+  --clr-warn:     #FFB800;
+  --clr-text:     #F0F0F0;
+  --clr-muted:    #8a9099;
+
+  --border-panel:  1px solid var(--clr-border);
+  --border-accent: 2px solid var(--clr-accent);
+  --border-danger: 2px solid var(--clr-danger);
+  --shadow-hard:        4px 4px 0px var(--clr-accent);
+  --shadow-hard-danger: 4px 4px 0px var(--clr-danger);
+}
+
+/* ── BASE ── */
+html {
+  background-color: var(--clr-bg);
+  color: var(--clr-text);
+  font-family: 'Space Grotesk', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--clr-bg);
+  /* Grid texture + subtle teal radial glow for depth */
+  background-image:
+    radial-gradient(ellipse 80% 60% at 70% 10%, rgba(0,255,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 10% 80%, rgba(204,255,0,0.03) 0%, transparent 50%),
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: auto, auto, 40px 40px, 40px 40px;
+  min-height: 100vh;
+}
+
+* { box-sizing: border-box; }
+
+::selection {
+  background-color: var(--clr-accent);
+  color: #000;
+}
+
+/* ============================================================
+   COMPONENT LAYER
+   ============================================================ */
+
+/* ── PANEL — base structural unit ── */
+.panel {
+  background-color: var(--clr-surface);
+  border: var(--border-panel);
+  position: relative;
+}
+
+/* Panel with accent top-left corner bracket */
+.panel-accent {
+  background-color: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-top: var(--border-accent);
+  position: relative;
+}
+
+.panel-accent::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -1px;
+  width: 24px;
+  height: 16px;
+  border-top: 2px solid var(--clr-accent);
+  border-left: 2px solid var(--clr-accent);
+  pointer-events: none;
+}
+
+/* ── METRIC CARD ── */
+.metric-card {
+  background-color: var(--clr-surface);
+  border: 1px solid var(--clr-border);
+  border-top: var(--border-accent);
+  position: relative;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: box-shadow 0.1s linear;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -1px;
+  width: 24px;
+  height: 16px;
+  border-top: 2px solid var(--clr-accent);
+  border-left: 2px solid var(--clr-accent);
+  pointer-events: none;
+}
+.metric-card:hover {
+  box-shadow: var(--shadow-hard);
+}
+
+/* ── BUTTON BASE ── */
+.btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid currentColor;
+  transition: box-shadow 0.1s linear, background-color 0.1s linear;
+  cursor: pointer;
+}
+.btn:active { transform: translate(2px, 2px); }
+
+.btn-accent {
+  color: #000;
+  background-color: var(--clr-accent);
+  border-color: var(--clr-accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--clr-accent);
+  cursor: pointer;
+  transition: box-shadow 0.1s linear;
+}
+.btn-accent:hover { box-shadow: var(--shadow-hard); }
+
+.btn-ghost {
+  color: var(--clr-muted);
+  background-color: transparent;
+  border-color: var(--clr-border);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--clr-border);
+  cursor: pointer;
+  transition: color 0.1s linear, border-color 0.1s linear;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-ghost:hover { color: var(--clr-text); border-color: var(--clr-muted); }
+
+.btn-danger {
+  color: var(--clr-danger);
+  background-color: transparent;
+  border-color: var(--clr-danger);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid var(--clr-danger);
+  cursor: pointer;
+}
+.btn-danger:hover {
+  background-color: var(--clr-danger);
+  color: #fff;
+  box-shadow: var(--shadow-hard-danger);
+}
+
+/* ── INPUT ── */
+.input-field {
+  width: 100%;
+  background-color: transparent;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  outline: none;
+  border: 1px solid var(--clr-border);
+  color: var(--clr-text);
+  transition: border-color 0.15s linear;
+}
+.input-field:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 1px var(--clr-accent);
+}
+.input-field::placeholder {
+  color: var(--clr-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── NAV ITEM ── */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-muted);
+  border-left: 2px solid transparent;
+  transition: color 0.1s linear, border-color 0.1s linear, background-color 0.1s linear;
+  text-decoration: none;
+}
+.nav-item:hover {
+  color: var(--clr-text);
+  background-color: rgba(255,255,255,0.03);
+  border-left-color: var(--clr-muted);
+}
+.nav-item.active {
+  color: var(--clr-accent);
+  border-left-color: var(--clr-accent);
+  background-color: rgba(204, 255, 0, 0.05);
+}
+
+/* ── STATUS BADGE ── */
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.4rem;
+  border: 1px solid currentColor;
+  display: inline-block;
+}
+.badge-online  { color: var(--clr-accent); }
+.badge-offline { color: var(--clr-muted); }
+.badge-pending { color: var(--clr-warn); }
+.badge-danger  { color: var(--clr-danger); }
+
+/* ── TABLE ── */
+.data-table {
+  width: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.data-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-muted);
+  border-bottom: 1px solid var(--clr-border);
+}
+.data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(42,42,42,0.5);
+  color: var(--clr-text);
+}
+.data-table tr:hover td {
+  background-color: rgba(255,255,255,0.02);
+}
+
+/* ── CORNER BRACKET DECORATION ── */
+.corner-bracket::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 20px;
+  height: 14px;
+  border-bottom: 2px solid var(--clr-border);
+  border-right: 2px solid var(--clr-border);
+  pointer-events: none;
+}
+
+/* ── HAZARD STRIPE ── */
+.hazard-stripe {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(204,255,0,0.08),
+    rgba(204,255,0,0.08) 4px,
+    transparent 4px,
+    transparent 16px
+  );
+}
+
+/* ── SYSTEM ID TEXT (decorative) ── */
+.sys-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--clr-muted);
+  opacity: 0.7;
+}
+
+/* ── LEAFLET OVERRIDES ── */
+.leaflet-container {
+  background: #050505 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+.leaflet-tile {
+  filter: grayscale(1) brightness(0.4) contrast(1.2) !important;
+}
+.leaflet-control-zoom a {
+  background-color: var(--clr-surface) !important;
+  color: var(--clr-accent) !important;
+  border: 1px solid var(--clr-border) !important;
+}
+
+/* ── ANIMATIONS (mechanical / linear) ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%            { opacity: 0.4; }
+  97%            { opacity: 1; }
+  98%            { opacity: 0.6; }
+}
+
+.animate-blink   { animation: blink 1s steps(1) infinite; }
+.animate-flicker { animation: flicker 4s linear infinite; }
+.animate-spin    { animation: spin 1s linear infinite; }
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
