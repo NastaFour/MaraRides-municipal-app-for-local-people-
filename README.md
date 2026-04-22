@@ -1,6 +1,16 @@
-# Sistema de Transporte Local — Mototaxis Municipales
+# 🛵 Sistema de Transporte Local — Mototaxis Municipales
 
-Plataforma de gestión de mototaxis con tracking GPS en tiempo real, panel de administración municipal, app móvil para clientes y conductores.
+![Project Banner](https://via.placeholder.com/1200x400.png?text=Sistema+de+Transporte+Local) <!-- Reemplazar con una captura de pantalla real de la app o banner -->
+
+Plataforma integral para la gestión de mototaxis a nivel municipal. Incluye tracking GPS en tiempo real, un panel de administración web para la municipalidad y una aplicación móvil intuitiva para clientes y conductores.
+
+## ✨ Características Principales
+
+- **🗺️ Tracking GPS en Tiempo Real:** Seguimiento exacto de los conductores durante los viajes usando WebSockets.
+- **📱 App Móvil Multiplataforma:** Desarrollada con React Native y Expo para clientes y conductores.
+- **💻 Panel de Administración Web:** Dashboard interactivo para supervisar operaciones, usuarios y métricas.
+- **🔒 Seguridad:** Autenticación robusta con JWT y contraseñas encriptadas.
+- **🏛️ Arquitectura Monorepo:** Código organizado, escalable y fácil de mantener con NPM Workspaces.
 
 ---
 
@@ -177,3 +187,13 @@ node packages/api/clear-trips.js            # Limpia viajes atascados en BD
 ├── vercel.json       # Config de Vercel
 └── .env.example      # Variables de entorno documentadas
 ```
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Si encuentras un bug o tienes una sugerencia, por favor abre un _issue_ o envía un _pull request_.
