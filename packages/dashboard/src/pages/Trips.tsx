@@ -1,10 +1,21 @@
 // ============================================================
 // Trips Page — packages/dashboard
-// Historial de viajes con filtros por estado y fecha
+// Audit & Operations Log: Municipal Trips Registry
+// Redesigned with Refactoring UI & UI-UX Pro Max
 // ============================================================
 
-import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, Calendar } from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import {
+  RefreshCw,
+  Calendar,
+  Compass,
+  Download,
+  Search,
+  CheckCircle2,
+  Clock,
+  Car,
+  AlertTriangle,
+} from 'lucide-react';
 import { tripsApi } from '../services/api';
 import type { Trip } from '../services/api';
 
@@ -12,33 +23,37 @@ type StatusFilter = 'ALL' | Trip['status'];
 
 const STATUS_OPTIONS: StatusFilter[] = ['ALL', 'REQUESTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
-const STATUS_META: Record<string, { label: string; color: string }> = {
-  ALL:         { label: 'TODOS',      color: 'var(--clr-muted)' },
-  REQUESTED:   { label: 'SOLICITADO', color: 'var(--clr-warn)' },
-  ACCEPTED:    { label: 'ACEPTADO',   color: 'var(--clr-cyan)' },
-  IN_PROGRESS: { label: 'EN CURSO',   color: 'var(--clr-accent)' },
-  COMPLETED:   { label: 'COMPLETADO', color: 'var(--clr-accent)' },
-  CANCELLED:   { label: 'CANCELADO',  color: 'var(--clr-danger)' },
+const STATUS_CONFIG: Record<string, { label: string; textClass: string; bgClass: string }> = {
+  ALL:         { label: 'Todos',        textClass: 'text-slate-300', bgClass: 'bg-slate-800' },
+  REQUESTED:   { label: 'Solicitado',   textClass: 'text-amber-400', bgClass: 'bg-amber-500/10 border-amber-500/30' },
+  ACCEPTED:    { label: 'Aceptado',     textClass: 'text-sky-400',   bgClass: 'bg-sky-500/10 border-sky-500/30' },
+  IN_PROGRESS: { label: 'En Ruta',      textClass: 'text-indigo-400', bgClass: 'bg-indigo-500/10 border-indigo-500/30' },
+  COMPLETED:   { label: 'Completado',   textClass: 'text-emerald-400', bgClass: 'bg-emerald-500/10 border-emerald-500/30' },
+  CANCELLED:   { label: 'Cancelado',    textClass: 'text-red-400',   bgClass: 'bg-red-500/10 border-red-500/30' },
 };
 
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleString('es-VE', {
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  });
+  try {
+    return new Date(dateStr).toLocaleString('es-VE', {
+      day: '2-digit', month: 'short',
+      hour: '2-digit', minute: '2-digit', hour12: false,
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 export function Trips() {
-  const [trips,    setTrips]    = useState<Trip[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [status,   setStatus]   = useState<StatusFilter>('ALL');
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<StatusFilter>('ALL');
   const [dateFrom, setDateFrom] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
-    // API returns all trips for ADMIN, we just load them once
     tripsApi.getAll()
       .then(setTrips)
       .catch(err => setError(err.message))
@@ -47,191 +62,243 @@ export function Trips() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Frontend Filtering
-  const filteredTrips = trips.filter(trip => {
-    // 1. Status Match
-    const matchStatus = status === 'ALL' || trip.status === status;
-    // 2. Date Match
-    let matchDate = true;
-    if (dateFrom) {
-      const tripDate = new Date(trip.createdAt).toISOString().split('T')[0];
-      matchDate = tripDate === dateFrom;
-    }
-    return matchStatus && matchDate;
-  });
+  const filteredTrips = useMemo(() => {
+    return trips.filter(trip => {
+      if (status !== 'ALL' && trip.status !== status) return false;
 
-  const counts = STATUS_OPTIONS.reduce((acc, s) => {
-    acc[s] = s === 'ALL' ? trips.length : trips.filter(t => t.status === s).length;
-    return acc;
-  }, {} as Record<string, number>);
+      if (dateFrom) {
+        const tripDate = new Date(trip.createdAt).toISOString().split('T')[0];
+        if (tripDate !== dateFrom) return false;
+      }
+
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const clientMatch = trip.client?.name?.toLowerCase().includes(term);
+        const driverMatch = trip.driver?.name?.toLowerCase().includes(term);
+        const originMatch = trip.originAddress?.toLowerCase().includes(term);
+        const destAddress = trip.destinationAddress || (trip as any).destAddress;
+        const destMatch = destAddress?.toLowerCase().includes(term);
+        return clientMatch || driverMatch || originMatch || destMatch;
+      }
+
+      return true;
+    });
+  }, [trips, status, dateFrom, searchTerm]);
+
+  const exportCSV = () => {
+    if (!filteredTrips.length) return;
+    const headers = ['ID', 'Cliente', 'Conductor', 'Origen', 'Destino', 'Tarifa (USD)', 'Estado', 'Fecha'];
+    const rows = filteredTrips.map(t => [
+      t.id,
+      t.client?.name ?? '',
+      t.driver?.name ?? 'Sin asignar',
+      `"${t.originAddress}"`,
+      `"${t.destinationAddress || (t as any).destAddress || ''}"`,
+      t.fare ?? 0,
+      t.status,
+      new Date(t.createdAt).toISOString(),
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `mara-rides-viajes-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const counts = useMemo(() => {
+    return STATUS_OPTIONS.reduce((acc, s) => {
+      acc[s] = s === 'ALL' ? trips.length : trips.filter(t => t.status === s).length;
+      return acc;
+    }, {} as Record<string, number>);
+  }, [trips]);
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* ── HEADER ── */}
       <header
         className="flex items-center justify-between px-8 py-5 border-b"
-        style={{ borderColor: 'var(--clr-border)' }}
+        style={{ borderColor: 'var(--clr-border)', background: 'var(--clr-surface)' }}
       >
         <div>
-          <h1
-            style={{
-              fontFamily: 'Anton, sans-serif',
-              fontSize: '1.6rem',
-              letterSpacing: '0.06em',
-              color: 'var(--clr-text)',
-              lineHeight: 1,
-            }}
-          >
-            HISTORIAL DE <span style={{ color: 'var(--clr-accent)' }}>VIAJES</span>
-          </h1>
-          <p className="sys-id mt-1">// {trips.length} registros totales</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Date filter */}
           <div className="flex items-center gap-2">
-            <Calendar size={12} style={{ color: 'var(--clr-muted)' }} />
-            <input
-              id="filter-date"
-              type="date"
-              className="input-field"
-              style={{ width: 160, padding: '4px 8px', fontSize: 12 }}
-              value={dateFrom}
-              onChange={e => setDateFrom(e.target.value)}
-            />
+            <Compass size={20} className="text-amber-500" />
+            <h1 className="text-xl font-bold text-white tracking-tight">Historial y Auditoría de Viajes</h1>
           </div>
-          <button id="btn-refresh-trips" onClick={load} className="btn-ghost flex items-center gap-2" disabled={loading}>
-            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-            ACTUALIZAR
+          <p className="text-xs text-slate-400 mt-0.5">
+            Registro de carreras de mototaxis para fiscalización y control ciudadano
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportCSV}
+            disabled={filteredTrips.length === 0}
+            className="btn-ghost"
+            title="Exportar a CSV"
+          >
+            <Download size={13} />
+            <span>Exportar CSV</span>
+          </button>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="btn-ghost"
+          >
+            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+            <span>Actualizar</span>
           </button>
         </div>
       </header>
 
-      <div className="p-8 flex flex-col gap-6">
-        {/* ── ERROR ── */}
+      {/* ── BODY ── */}
+      <div className="p-8 space-y-6">
         {error && (
-          <div className="font-mono text-xs p-4" style={{ border: 'var(--border-danger)', color: 'var(--clr-danger)', background: 'rgba(255,51,0,0.06)' }}>
+          <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
             ⚠ {error}
           </div>
         )}
 
-        {/* ── STATUS FILTER TABS ── */}
-        <div className="flex gap-0 border-b flex-wrap" style={{ borderColor: 'var(--clr-border)' }}>
-          {STATUS_OPTIONS.map(s => (
-            <button
-              key={s}
-              id={`tab-${s.toLowerCase()}`}
-              onClick={() => setStatus(s)}
-              className="font-mono text-xs uppercase tracking-widest px-4 py-3 transition-colors"
-              style={{
-                borderBottom: status === s
-                  ? `2px solid ${STATUS_META[s].color}`
-                  : '2px solid transparent',
-                color: status === s ? STATUS_META[s].color : 'var(--clr-muted)',
-                background: 'transparent',
-                cursor: 'pointer',
-                marginBottom: -1,
-              }}
-            >
-              {STATUS_META[s].label}
-              <span
-                className="ml-1 font-mono text-xs"
-                style={{ opacity: 0.6 }}
-              >
-                ({counts[s] ?? 0})
-              </span>
-            </button>
-          ))}
+        {/* ── CONTROLS: TABS & FILTERS ── */}
+        <div className="flex flex-col gap-4">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800 overflow-x-auto">
+            {STATUS_OPTIONS.map(s => {
+              const active = status === s;
+              const config = STATUS_CONFIG[s];
+              return (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={`text-xs font-semibold px-4 py-2 rounded-lg whitespace-nowrap transition-all ${
+                    active
+                      ? 'bg-amber-500 text-slate-950 shadow-sm'
+                      : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  {config?.label ?? s} ({counts[s] ?? 0})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search + Date filter row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="relative w-full sm:w-96">
+              <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <input
+                type="text"
+                placeholder="Buscar por cliente, conductor o dirección..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-xl text-xs bg-slate-900/80 border border-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Calendar size={14} className="text-slate-500" />
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+                className="px-3 py-1.5 rounded-lg text-xs bg-slate-900/80 border border-slate-800 text-white focus:outline-none focus:border-amber-500"
+              />
+              {dateFrom && (
+                <button onClick={() => setDateFrom('')} className="text-xs text-amber-500 hover:underline">
+                  Limpiar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* ── TRIPS TABLE ── */}
-        <div className="panel-accent overflow-hidden">
+        {/* ── TABLE ── */}
+        <div className="panel overflow-hidden">
           {loading ? (
-            <p className="font-mono text-xs p-6" style={{ color: 'var(--clr-muted)' }}>Cargando viajes...</p>
+            <div className="p-12 text-center text-slate-500 text-sm">Cargando viajes...</div>
           ) : filteredTrips.length === 0 ? (
-            <p className="font-mono text-xs p-6" style={{ color: 'var(--clr-muted)' }}>Sin viajes en este filtro.</p>
+            <div className="p-12 text-center text-slate-500 text-sm">
+              No se encontraron viajes con los filtros seleccionados.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Cliente</th>
-                    <th>Conductor</th>
-                    <th>Origen</th>
-                    <th>Destino</th>
-                    <th>Estado</th>
+                    <th>Código</th>
+                    <th>Pasajero</th>
+                    <th>Mototaxista</th>
+                    <th>Ruta (Origen → Destino)</th>
                     <th>Tarifa</th>
-                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Fecha / Hora</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTrips.map(trip => (
-                    <tr key={trip.id}>
-                      {/* ID */}
-                      <td>
-                        <span className="sys-id">{trip.id.slice(0, 8)}</span>
-                      </td>
+                  {filteredTrips.map(trip => {
+                    const dest = trip.destinationAddress || (trip as any).destAddress;
+                    const config = STATUS_CONFIG[trip.status] || STATUS_CONFIG.ALL;
+                    return (
+                      <tr key={trip.id}>
+                        {/* ID */}
+                        <td>
+                          <span className="font-mono text-xs text-slate-400 font-medium">
+                            #{trip.id.slice(0, 8)}
+                          </span>
+                        </td>
 
-                      {/* Client */}
-                      <td>
-                        <p className="font-mono text-xs" style={{ color: 'var(--clr-text)' }}>{trip.client.name}</p>
-                        <p className="sys-id">{trip.client.phone}</p>
-                      </td>
+                        {/* Pasajero */}
+                        <td>
+                          <p className="font-semibold text-slate-200 text-xs">{trip.client?.name}</p>
+                          <p className="text-[11px] text-slate-500">{trip.client?.phone}</p>
+                        </td>
 
-                      {/* Driver */}
-                      <td>
-                        {trip.driver ? (
-                          <div>
-                            <p className="font-mono text-xs" style={{ color: 'var(--clr-text)' }}>{trip.driver.name}</p>
-                            <p className="sys-id">{trip.driver.phone}</p>
+                        {/* Conductor */}
+                        <td>
+                          {trip.driver ? (
+                            <div>
+                              <p className="font-semibold text-slate-200 text-xs">{trip.driver.name}</p>
+                              <p className="text-[11px] text-slate-500">{trip.driver.phone}</p>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-500 italic">Sin asignar</span>
+                          )}
+                        </td>
+
+                        {/* Ruta */}
+                        <td>
+                          <div className="max-w-xs text-xs space-y-0.5">
+                            <p className="text-slate-300 truncate">🟢 {trip.originAddress}</p>
+                            <p className="text-slate-400 truncate">🏁 {dest}</p>
                           </div>
-                        ) : (
-                          <span className="sys-id">Sin asignar</span>
-                        )}
-                      </td>
+                        </td>
 
-                      {/* Origin */}
-                      <td>
-                        <span className="font-mono text-xs" style={{ color: 'var(--clr-muted)', maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {trip.originAddress}
-                        </span>
-                      </td>
+                        {/* Tarifa */}
+                        <td>
+                          <span className="font-mono text-xs font-bold text-amber-400">
+                            ${trip.fare != null ? trip.fare.toFixed(2) : '0.00'}
+                          </span>
+                        </td>
 
-                      {/* Destination */}
-                      <td>
-                        <span className="font-mono text-xs" style={{ color: 'var(--clr-muted)', maxWidth: 160, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {trip.destinationAddress}
-                        </span>
-                      </td>
+                        {/* Estado */}
+                        <td>
+                          <span className={`badge ${config.textClass} ${config.bgClass}`}>
+                            {config.label}
+                          </span>
+                        </td>
 
-                      {/* Status */}
-                      <td>
-                        <span
-                          className="badge"
-                          style={{
-                            color: STATUS_META[trip.status as string]?.color || 'var(--clr-muted)',
-                            borderColor: STATUS_META[trip.status as string]?.color || 'var(--clr-muted)',
-                          }}
-                        >
-                          {STATUS_META[trip.status as string]?.label || trip.status}
-                        </span>
-                      </td>
-
-                      {/* Fare */}
-                      <td>
-                        <span className="font-mono text-xs" style={{ color: trip.fare ? 'var(--clr-accent)' : 'var(--clr-muted)' }}>
-                          {trip.fare != null ? `Bs. ${trip.fare.toFixed(2)}` : '—'}
-                        </span>
-                      </td>
-
-                      {/* Date */}
-                      <td>
-                        <span className="font-mono" style={{ fontSize: 10, color: 'var(--clr-muted)' }}>
-                          {formatDate(trip.createdAt)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        {/* Fecha */}
+                        <td>
+                          <span className="text-xs text-slate-400">
+                            {formatDate(trip.createdAt)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

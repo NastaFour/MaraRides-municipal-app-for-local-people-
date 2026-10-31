@@ -4,6 +4,7 @@ import {
   loginUser,
   registerDriver,
   loginDriver,
+  loginUniversal,
   getMe,
 } from '../controllers/auth.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
@@ -12,6 +13,8 @@ import { authLimiter } from '../lib/rateLimiters';
 const router = Router();
 
 // Auth routes — protected by strict rate limiter (10 req/min)
+router.post('/login', authLimiter, loginUniversal);
+
 router.post('/client/register', authLimiter, registerClient);
 router.post('/client/login', authLimiter, loginUser);
 

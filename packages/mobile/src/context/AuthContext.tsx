@@ -29,11 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const token = await getToken();
         if (!token) throw new Error('No token');
-        
+
         const storedUser = await getUser();
         if (storedUser) setUser(storedUser);
       } catch {
-        // Not logged in
         setUser(null);
       } finally {
         setLoading(false);
@@ -46,21 +45,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (loading) return;
 
-    const inAuthGroup = segments[0] === 'auth';
-    const isRoot = segments.length === 0;
+    const segmentList = segments as string[];
+    const inAuthGroup = segmentList[0] === 'auth';
+    const isRoot = segmentList.length === 0;
 
     if (!user && !inAuthGroup && !isRoot) {
-      // Trying to access protected route without auth:
       router.replace('/auth/login');
     } else if (user) {
-      // Logged in user redirection based on roles:
       if (inAuthGroup || isRoot) {
         if (user.role === 'CLIENT') {
-          router.replace('/(client)'); // client dashboard
+          router.replace('/(client)');
         } else if (user.role === 'DRIVER') {
-          router.replace('/(driver)'); // driver dashboard
+          router.replace('/(driver)');
         } else {
-          // Admin uses web dashboard, shouldn't be here ideally, but fallback:
           router.replace('/auth/login');
         }
       }

@@ -1,7 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { request } from '../../src/services/api';
 import { theme } from '../../src/theme/theme';
 
@@ -15,158 +25,179 @@ export default function RegisterDriverScreen() {
       plate: '',
       model: '',
       year: '',
-    }
+    },
   });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
     const { name, phone, password, licenseNum, vehicle } = form;
-    if (!name || !phone || !password || !licenseNum || !vehicle.plate || !vehicle.model) {
-      Alert.alert('REGISTRO RECHAZADO', 'Faltan datos obligatorios para el expediente del conductor.');
+    if (!name.trim() || !phone.trim() || !password.trim() || !licenseNum.trim() || !vehicle.plate.trim() || !vehicle.model.trim()) {
+      Alert.alert('Datos Incompletos', 'Por favor llena todos los datos del conductor y de la mototaxi.');
       return;
     }
 
     setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
       await request('/auth/driver/register', {
         method: 'POST',
-        body: JSON.stringify(form),
-        skipAuth: true
+        body: JSON.stringify({
+          name: name.trim(),
+          phone: phone.trim(),
+          password,
+          licenseNum: licenseNum.trim(),
+          vehicle: {
+            plate: vehicle.plate.trim().toUpperCase(),
+            model: vehicle.model.trim(),
+            year: Number(vehicle.year) || 2024,
+          },
+        }),
+        skipAuth: true,
       });
-      
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'EXPEDIENTE CREADO', 
-        'Registro exitoso. Tu cuenta está sujeta a aprobación municipal.',
-        [{ text: 'ENTENDIDO', onPress: () => router.replace('/auth/login') }]
+        '¡Solicitud Registrada!',
+        'Tu expediente fue recibido. La Dirección de Transporte Municipal revisará tu documentación para aprobarte.',
+        [{ text: 'Entendido', onPress: () => router.replace('/auth/login') }]
       );
     } catch (e: any) {
-      Alert.alert('FALLO DEL SISTEMA', e.message || 'Error en el proceso de registro.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error en postulación', e.message || 'No se pudo completar el registro del conductor.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.header}>
-        <Text style={styles.headerLabel}>// ALTA DE CONDUCTOR PROFESIONAL</Text>
-        <Text style={styles.headerTitle}>REGISTRO DE <Text style={styles.accent}>OPERADOR</Text></Text>
-      </View>
-
-      <View style={styles.hazardContainer}>
-        <LinearGradient
-          colors={['#FF3300', '#000', '#FF3300', '#000']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hazardStrip}
-        />
-      </View>
-
-      <View style={styles.formPanel}>
-        <Text style={styles.sectionTitle}>[ DATOS PERSONALES ]</Text>
-        
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>CONDUCTOR</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="NOMBRE Y APELLIDO"
-            placeholderTextColor={theme.colors.muted}
-            value={form.name}
-            onChangeText={(v) => setForm({ ...form, name: v })}
-          />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backTxt}>← Volver</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Postulación de Mototaxista</Text>
+          <Text style={styles.headerSubtitle}>
+            Únete a la red oficial de mototaxis del Municipio Mara
+          </Text>
         </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>NRO. LICENCIA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="LIC-0000000"
-            placeholderTextColor={theme.colors.muted}
-            value={form.licenseNum}
-            onChangeText={(v) => setForm({ ...form, licenseNum: v })}
-          />
-        </View>
+        {/* Personal Details Card */}
+        <View style={styles.card}>
+          <Text style={styles.cardSectionTitle}>Datos del Conductor</Text>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>TELÉFONO</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="04160000000"
-            placeholderTextColor={theme.colors.muted}
-            keyboardType="phone-pad"
-            value={form.phone}
-            onChangeText={(v) => setForm({ ...form, phone: v })}
-          />
-        </View>
-
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>CONTRASEÑA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={theme.colors.muted}
-            secureTextEntry
-            value={form.password}
-            onChangeText={(v) => setForm({ ...form, password: v })}
-          />
-        </View>
-
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>[ DATOS DEL VEHÍCULO ]</Text>
-
-        <View style={styles.row}>
-          <View style={[styles.inputBox, { flex: 1 }]}>
-            <Text style={styles.label}>PLACA</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nombre y Apellido</Text>
             <TextInput
               style={styles.input}
-              placeholder="PLA-123"
-              autoCapitalize="characters"
+              placeholder="Ej. Carlos Mendoza"
               placeholderTextColor={theme.colors.muted}
-              value={form.vehicle.plate}
-              onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, plate: v } })}
+              value={form.name}
+              onChangeText={(v) => setForm({ ...form, name: v })}
             />
           </View>
-          <View style={[styles.inputBox, { flex: 1, marginLeft: 10 }]}>
-            <Text style={styles.label}>AÑO</Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nro. de Licencia de Conducir</Text>
             <TextInput
               style={styles.input}
-              placeholder="2024"
-              keyboardType="numeric"
+              placeholder="Ej. LIC-12345678"
               placeholderTextColor={theme.colors.muted}
-              value={form.vehicle.year}
-              onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, year: v } })}
+              value={form.licenseNum}
+              onChangeText={(v) => setForm({ ...form, licenseNum: v })}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Teléfono de Contacto</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="04161234567"
+              placeholderTextColor={theme.colors.muted}
+              keyboardType="phone-pad"
+              value={form.phone}
+              onChangeText={(v) => setForm({ ...form, phone: v })}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Crea una contraseña segura"
+              placeholderTextColor={theme.colors.muted}
+              secureTextEntry
+              value={form.password}
+              onChangeText={(v) => setForm({ ...form, password: v })}
             />
           </View>
         </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>MARCA / MODELO</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="BMW / MOTOTRAK"
-            placeholderTextColor={theme.colors.muted}
-            value={form.vehicle.model}
-            onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, model: v } })}
-          />
+        {/* Vehicle Details Card */}
+        <View style={[styles.card, { marginTop: 16 }]}>
+          <Text style={styles.cardSectionTitle}>Datos de la Mototaxi</Text>
+
+          <View style={styles.row}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.label}>Placa</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="AB1C23D"
+                autoCapitalize="characters"
+                placeholderTextColor={theme.colors.muted}
+                value={form.vehicle.plate}
+                onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, plate: v } })}
+              />
+            </View>
+            <View style={[styles.inputGroup, { width: 100 }]}>
+              <Text style={styles.label}>Año</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2024"
+                keyboardType="numeric"
+                placeholderTextColor={theme.colors.muted}
+                value={form.vehicle.year}
+                onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, year: v } })}
+              />
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Marca y Modelo</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Bera SBR / Empire Keeway"
+              placeholderTextColor={theme.colors.muted}
+              value={form.vehicle.model}
+              onChangeText={(v) => setForm({ ...form, vehicle: { ...form.vehicle, model: v } })}
+            />
+          </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.submitBtn} 
+        {/* Submit */}
+        <TouchableOpacity
+          style={styles.submitBtn}
           onPress={handleRegister}
           disabled={loading}
+          activeOpacity={0.8}
         >
           {loading ? (
-            <ActivityIndicator color="#000" size="small" />
+            <ActivityIndicator color={theme.colors.textDark} size="small" />
           ) : (
-            <Text style={styles.submitBtnText}>ENVIAR SOLICITUD DE ALTA</Text>
+            <Text style={styles.submitBtnText}>Enviar Expediente para Aprobación</Text>
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backBtnText}>REGRESAR</Text>
+        <TouchableOpacity onPress={() => router.replace('/auth/login')} style={styles.loginLink}>
+          <Text style={styles.loginLinkText}>
+            ¿Ya tienes credenciales? <Text style={styles.highlight}>Inicia Sesión</Text>
+          </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -177,84 +208,94 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
-  headerLabel: {
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    marginBottom: theme.spacing.sm,
+  },
+  backTxt: {
     color: theme.colors.muted,
-    fontFamily: theme.fonts.mono,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: 13,
+    fontWeight: '600',
   },
   headerTitle: {
     color: theme.colors.text,
-    fontSize: 28,
-    fontWeight: '900',
-    marginTop: theme.spacing.xs,
+    fontSize: 22,
+    fontWeight: '800',
   },
-  accent: {
-    color: theme.colors.danger, // Drivers use Orange/Red as primary
+  headerSubtitle: {
+    color: theme.colors.muted,
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
   },
-  hazardContainer: {
-    height: 4,
-    backgroundColor: '#000',
-    marginVertical: theme.spacing.lg,
-    overflow: 'hidden',
-  },
-  hazardStrip: {
-    flex: 1,
-  },
-  formPanel: {
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.card,
     gap: theme.spacing.md,
   },
-  sectionTitle: {
-    color: theme.colors.muted,
-    fontFamily: theme.fonts.mono,
+  cardSectionTitle: {
+    color: theme.colors.accent,
     fontSize: 14,
-    marginBottom: 10,
-    backgroundColor: theme.colors.surface,
-    padding: 5,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  inputBox: {
-    gap: 4,
+  inputGroup: {
+    gap: 6,
   },
   row: {
     flexDirection: 'row',
+    gap: 12,
   },
   label: {
-    color: theme.colors.muted,
-    fontFamily: theme.fonts.mono,
-    fontSize: 11,
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   input: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.elevated,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: theme.spacing.md,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
-    fontSize: 14,
+    fontSize: 15,
   },
   submitBtn: {
-    backgroundColor: theme.colors.danger,
-    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 15,
     alignItems: 'center',
     marginTop: 20,
+    ...theme.shadows.card,
   },
   submitBtnText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontFamily: theme.fonts.mono,
+    color: theme.colors.textDark,
+    fontWeight: '700',
+    fontSize: 15,
   },
-  backBtn: {
-    padding: theme.spacing.md,
+  loginLink: {
     alignItems: 'center',
+    paddingVertical: 12,
   },
-  backBtnText: {
-    color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
-    fontSize: 12,
+  loginLinkText: {
+    color: theme.colors.muted,
+    fontSize: 13,
+  },
+  highlight: {
+    color: theme.colors.accent,
+    fontWeight: '700',
   },
 });

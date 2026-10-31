@@ -31,6 +31,12 @@ enum TripStatus {
   CANCELLED
 }
 
+enum PaymentMethod {
+  CASH
+  PAGO_MOVIL
+  CARD
+}
+
 // ─── Models ──────────────────────────────────────────────────────────────────
 
 model User {
@@ -42,7 +48,8 @@ model User {
   role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
 
-  trips Trip[] @relation("ClientTrips")
+  trips   Trip[]   @relation("ClientTrips")
+  ratings Rating[] @relation("ClientRatings")
 
   @@map("users")
 }
@@ -55,12 +62,15 @@ model Driver {
   licenseNum String       @unique
   status     DriverStatus @default(OFFLINE)
   isApproved Boolean      @default(false)
+  ratingAvg  Float        @default(5.0)
+  totalTrips Int          @default(0)
   latitude   Float?
   longitude  Float?
   createdAt  DateTime     @default(now())
 
   vehicle Vehicle?
   trips   Trip[]
+  ratings Rating[]     @relation("DriverRatings")
 
   @@map("drivers")
 }
@@ -78,7 +88,7 @@ model Vehicle {
 }
 
 model Trip {
-  id            String     @id @default(uuid())
+  id            String        @id @default(uuid())
   clientId      String
   driverId      String?
   originLat     Float
@@ -87,13 +97,34 @@ model Trip {
   destLng       Float
   originAddress String
   destAddress   String
-  status        TripStatus @default(REQUESTED)
+  status        TripStatus    @default(REQUESTED)
   fare          Float?
-  createdAt     DateTime   @default(now())
+  distanceKm    Float?
+  durationMin   Float?
+  paymentMethod PaymentMethod @default(CASH)
+  startedAt     DateTime?
   completedAt   DateTime?
+  createdAt     DateTime      @default(now())
 
   client User    @relation("ClientTrips", fields: [clientId], references: [id])
   driver Driver? @relation(fields: [driverId], references: [id])
+  rating Rating?
 
   @@map("trips")
+}
+
+model Rating {
+  id        String   @id @default(uuid())
+  tripId    String   @unique
+  score     Int
+  comment   String?
+  clientId  String
+  driverId  String
+  createdAt DateTime @default(now())
+
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  client User   @relation("ClientRatings", fields: [clientId], references: [id], onDelete: Cascade)
+  driver Driver @relation("DriverRatings", fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@map("ratings")
 }

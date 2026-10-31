@@ -4,14 +4,14 @@ import { getSocket } from './socket';
 
 export const LOCATION_TASK_NAME = 'background-location-task';
 
-TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }: any) => {
+TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
   if (error) {
     console.error('[LOCATION_TASK] Error:', error);
     return;
   }
   if (data) {
     const { locations } = data;
-    const location = locations[0];
+    const location = locations?.[0];
     if (location) {
       const socket = getSocket();
       if (socket && socket.connected) {
@@ -19,31 +19,42 @@ TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }: any) => {
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         });
-        console.log('[LOCATION_TASK] Coords emitted:', location.coords.latitude, location.coords.longitude);
       }
     }
   }
 });
 
 export const startBackgroundUpdate = async () => {
-  const { status } = await Location.requestBackgroundPermissionsAsync();
-  if (status !== 'granted') {
-    console.error('[LOCATION_TASK] Background permission denied');
-    return;
-  }
+  try {
+    const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
+    if (fgStatus !== 'granted') {
+      console.warn('[LOCATION_TASK] Foreground permission not granted');
+      return false;
+    }
 
-  const isStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
-  if (!isStarted) {
-    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.High,
-      timeInterval: 10000, // 10 seconds
-      distanceInterval: 10, // 10 meters
-      foregroundService: {
-        notificationTitle: 'MotoTaxi Active',
-        notificationBody: 'Tu ubicación se está compartiendo en tiempo real.',
-        notificationColor: '#CCFF00',
-      },
-    });
+    const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
+    if (bgStatus !== 'granted') {
+      console.warn('[LOCATION_TASK] Background permission denied, falling back to foreground tracking');
+      return false;
+    }
+
+    const isStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+    if (!isStarted) {
+      await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 10000,
+        distanceInterval: 10,
+        foregroundService: {
+          notificationTitle: 'Mara Rides Conductor Activo',
+          notificationBody: 'Tu ubicación se comparte en tiempo real con la central municipal.',
+          notificationColor: '#F59E0B',
+        },
+      });
+    }
+    return true;
+  } catch (err) {
+    console.error('[LOCATION_TASK] Exception starting background location:', err);
+    return false;
   }
 };
 

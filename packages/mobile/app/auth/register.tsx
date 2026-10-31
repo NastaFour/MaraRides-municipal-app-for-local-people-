@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { request } from '../../src/services/api';
 import { theme } from '../../src/theme/theme';
 
@@ -16,117 +25,114 @@ export default function RegisterClientScreen() {
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!form.name || !form.phone || !form.password) {
-      Alert.alert('REGISTRO FALLIDO', 'Todos los campos son obligatorios.');
+    if (!form.name.trim() || !form.phone.trim() || !form.password.trim()) {
+      Alert.alert('Campos incompletos', 'Por favor llena todos los campos para registrarte.');
       return;
     }
 
     setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
       await request('/auth/client/register', {
         method: 'POST',
-        body: JSON.stringify(form),
-        skipAuth: true
+        body: JSON.stringify({
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          password: form.password,
+        }),
+        skipAuth: true,
       });
-      
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert(
-        'SISTEMA ACTUALIZADO', 
-        'Registro exitoso. Procede a iniciar sesión.',
-        [{ text: 'ENTENDIDO', onPress: () => router.replace('/auth/login') }]
+        '¡Registro Exitoso!',
+        'Tu cuenta de pasajero ha sido creada. Ya puedes iniciar sesión y solicitar carreras.',
+        [{ text: 'Iniciar Sesión', onPress: () => router.replace('/auth/login') }]
       );
     } catch (e: any) {
-      Alert.alert('ERROR CRÍTICO', e.message || 'No se pudo completar el registro.');
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert('Error en registro', e.message || 'No se pudo crear la cuenta.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      {/* Technical Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerLabel}>// IDENTIFICACIÓN DE SUJETO</Text>
-        <Text style={styles.headerTitle}>REGISTRO DE <Text style={styles.accent}>CLIENTE</Text></Text>
-        <View style={styles.sysRef}>
-          <Text style={styles.sysText}>REF: CT-USR-NEW</Text>
-          <View style={styles.dot} />
-        </View>
-      </View>
-
-      {/* Hazard Stripes */}
-      <View style={styles.hazardContainer}>
-        <LinearGradient
-          colors={[theme.colors.accent, '#000', theme.colors.accent, '#000']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          locations={[0, 0.45, 0.5, 0.95]}
-          style={styles.hazardStrip}
-        />
-      </View>
-
-      <View style={styles.formPanel}>
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>[ NOMBRE COMPLETO ]</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="EJ. JUAN PÉREZ"
-            placeholderTextColor={theme.colors.muted}
-            value={form.name}
-            onChangeText={(v) => setForm({ ...form, name: v })}
-          />
+    <SafeAreaView style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Top Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+            <Text style={styles.backTxt}>← Volver</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Crear Cuenta de Pasajero</Text>
+          <Text style={styles.headerSubtitle}>
+            Muévete por el municipio Mara de forma rápida, segura y económica
+          </Text>
         </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>[ TERMINAL MÓVIL ]</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="04140000000"
-            placeholderTextColor={theme.colors.muted}
-            keyboardType="phone-pad"
-            value={form.phone}
-            onChangeText={(v) => setForm({ ...form, phone: v })}
-          />
+        {/* Card Form */}
+        <View style={styles.formCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nombre y Apellido</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ej. Juan Pérez"
+              placeholderTextColor={theme.colors.muted}
+              value={form.name}
+              onChangeText={(v) => setForm({ ...form, name: v })}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Número de Teléfono</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="04141234567"
+              placeholderTextColor={theme.colors.muted}
+              keyboardType="phone-pad"
+              value={form.phone}
+              onChangeText={(v) => setForm({ ...form, phone: v })}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Contraseña</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Crea una contraseña segura"
+              placeholderTextColor={theme.colors.muted}
+              secureTextEntry
+              value={form.password}
+              onChangeText={(v) => setForm({ ...form, password: v })}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={styles.submitBtn}
+            onPress={handleRegister}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator color={theme.colors.textDark} size="small" />
+            ) : (
+              <Text style={styles.submitBtnText}>Registrarme como Pasajero</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.replace('/auth/login')}
+            style={styles.loginLink}
+          >
+            <Text style={styles.loginLinkText}>
+              ¿Ya tienes cuenta? <Text style={styles.highlight}>Inicia Sesión</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
-
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>[ LLAVE DE ACCESO ]</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="••••••••"
-            placeholderTextColor={theme.colors.muted}
-            secureTextEntry
-            value={form.password}
-            onChangeText={(v) => setForm({ ...form, password: v })}
-          />
-        </View>
-
-        <TouchableOpacity 
-          style={styles.submitBtn} 
-          onPress={handleRegister}
-          disabled={loading}
-          activeOpacity={0.9}
-        >
-          {loading ? (
-            <ActivityIndicator color="#000" size="small" />
-          ) : (
-            <Text style={styles.submitBtnText}>EJECUTAR ALTA DE USUARIO</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          onPress={() => router.back()} 
-          style={styles.backBtn}
-        >
-          <Text style={styles.backBtnText}>&lt; ABORTAR Y REGRESAR</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Visual background elements */}
-      <View style={styles.footerInfo}>
-        <Text style={styles.footerText}>MEM_STATUS: 0x8922</Text>
-        <Text style={styles.footerText}>ENCRYPTION: AES-256-ACTIVE</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -137,107 +143,86 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: theme.spacing.lg,
-    paddingTop: 60,
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   header: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
-  headerLabel: {
+  backBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: 4,
+    marginBottom: theme.spacing.sm,
+  },
+  backTxt: {
     color: theme.colors.muted,
-    fontFamily: theme.fonts.mono,
-    fontSize: 10,
-    letterSpacing: 2,
+    fontSize: 13,
+    fontWeight: '600',
   },
   headerTitle: {
     color: theme.colors.text,
-    fontSize: 32,
-    fontWeight: '900',
-    marginTop: theme.spacing.xs,
+    fontSize: 22,
+    fontWeight: '800',
   },
-  accent: {
-    color: theme.colors.accent,
-  },
-  sysRef: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: theme.spacing.sm,
-  },
-  sysText: {
-    color: theme.colors.cyan,
-    fontFamily: theme.fonts.mono,
-    fontSize: 12,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    backgroundColor: theme.colors.cyan,
-  },
-  hazardContainer: {
-    height: 4,
-    backgroundColor: '#000',
-    marginVertical: theme.spacing.lg,
-    overflow: 'hidden',
-  },
-  hazardStrip: {
-    flex: 1,
-    transform: [{ scaleX: 2 }],
-  },
-  formPanel: {
-    gap: theme.spacing.xl,
-  },
-  inputBox: {
-    gap: theme.spacing.xs,
-  },
-  label: {
+  headerSubtitle: {
     color: theme.colors.muted,
-    fontFamily: theme.fonts.mono,
-    fontSize: 12,
+    fontSize: 13,
+    marginTop: 4,
+    lineHeight: 18,
   },
-  input: {
+  formCard: {
     backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: theme.spacing.md,
+    ...theme.shadows.card,
+    gap: theme.spacing.md,
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  label: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: theme.colors.elevated,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     color: theme.colors.text,
-    fontFamily: theme.fonts.mono,
-    fontSize: 16,
+    fontSize: 15,
   },
   submitBtn: {
     backgroundColor: theme.colors.accent,
-    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: '#000',
+    marginTop: theme.spacing.sm,
+    ...theme.shadows.card,
   },
   submitBtnText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontFamily: theme.fonts.mono,
-    letterSpacing: 1,
+    color: theme.colors.textDark,
+    fontWeight: '700',
+    fontSize: 15,
   },
-  backBtn: {
-    padding: theme.spacing.md,
+  loginLink: {
     alignItems: 'center',
+    paddingVertical: 6,
+    marginTop: 4,
   },
-  backBtnText: {
-    color: theme.colors.danger,
-    fontFamily: theme.fonts.mono,
-    fontSize: 12,
-    textDecorationLine: 'underline',
+  loginLinkText: {
+    color: theme.colors.muted,
+    fontSize: 13,
   },
-  footerInfo: {
-    marginTop: 60,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-    paddingTop: theme.spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  footerText: {
-    color: '#222',
-    fontSize: 10,
-    fontFamily: theme.fonts.mono,
+  highlight: {
+    color: theme.colors.accent,
+    fontWeight: '700',
   },
 });

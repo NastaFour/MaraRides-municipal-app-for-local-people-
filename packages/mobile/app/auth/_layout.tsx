@@ -6,13 +6,13 @@ export default function AuthLayout() {
     <Stack screenOptions={{
       headerStyle: { backgroundColor: theme.colors.surface },
       headerTintColor: theme.colors.accent,
-      headerTitleStyle: { fontFamily: theme.fonts.mono, letterSpacing: 2 },
+      headerTitleStyle: { fontWeight: '700' },
       contentStyle: { backgroundColor: theme.colors.bg },
       headerShadowVisible: false,
     }}>
-      <Stack.Screen name="login" options={{ title: 'ACCESO', headerTitleAlign: 'center' }} />
-      <Stack.Screen name="register" options={{ title: 'REGISTRO CLIENTE', headerTitleAlign: 'center' }} />
-      <Stack.Screen name="register-driver" options={{ title: 'REGISTRO CONDUCTOR', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="register" options={{ title: 'Registro de Pasajero', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="register-driver" options={{ title: 'Registro de Conductor', headerTitleAlign: 'center' }} />
     </Stack>
   );
 }

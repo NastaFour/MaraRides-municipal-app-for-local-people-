@@ -1,13 +1,13 @@
 // ============================================================
 // Login Page — packages/dashboard
-// Admin-only login. Aesthetic: Graphic Realism / complement.md
-// Desktop-First: centered panel, hard shadows, monospace form
+// Municipal Admin Login
+// Redesigned with Refactoring UI & UI-UX Pro Max
 // ============================================================
 
 import { useState, FormEvent } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldAlert, Terminal } from 'lucide-react';
+import { Navigation, Lock, Phone, AlertCircle, ArrowRight } from 'lucide-react';
 
 export function Login() {
   const { login, isLoading } = useAuth();
@@ -26,133 +26,100 @@ export function Login() {
       await login(phone, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error de autenticación');
+      setError(err instanceof Error ? err.message : 'Error de autenticación. Verifica tus credenciales.');
     }
   };
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-8"
+      className="min-h-screen flex items-center justify-center p-6"
       style={{ background: 'var(--clr-bg)' }}
     >
-      {/* ── LOGIN PANEL ── */}
-      <div style={{ width: '100%', maxWidth: 420 }}>
-
-        {/* Header decoration */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <ShieldAlert size={24} style={{ color: 'var(--clr-accent)' }} />
-            <h1
-              style={{
-                fontFamily: 'Anton, sans-serif',
-                fontSize: '2rem',
-                letterSpacing: '0.08em',
-                color: 'var(--clr-text)',
-                lineHeight: 1,
-              }}
-            >
-              CITY<span style={{ color: 'var(--clr-accent)' }}>TRANSIT</span>
-            </h1>
+      <div className="w-full max-w-md">
+        {/* Brand Header */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 mb-4 shadow-lg shadow-amber-500/5">
+            <Navigation size={28} className="text-amber-500" />
           </div>
-          <p className="sys-id">// MUNICIPAL CONTROL CENTER — AUTH REQUIRED</p>
+          <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center justify-center gap-1.5">
+            MARA<span className="text-amber-500">RIDES</span>
+          </h1>
+          <p className="text-xs text-slate-400 mt-1 font-medium">
+            Panel de Operaciones y Control Municipal de Mototaxis
+          </p>
         </div>
 
-        {/* Panel */}
-        <div
-          className="panel-accent corner-bracket"
-          style={{ padding: '2rem' }}
-        >
-          {/* Terminal heading */}
-          <div className="flex items-center gap-2 mb-6" style={{ borderBottom: '1px solid var(--clr-border)', paddingBottom: '1rem' }}>
-            <Terminal size={14} style={{ color: 'var(--clr-accent)' }} />
-            <span className="font-mono text-xs uppercase tracking-widest" style={{ color: 'var(--clr-muted)' }}>
-              admin.login v1.0
-            </span>
+        {/* Login Card */}
+        <div className="panel p-8">
+          <div className="border-b border-slate-800 pb-4 mb-6">
+            <h2 className="text-base font-semibold text-slate-200">Ingreso Administrativo</h2>
+            <p className="text-xs text-slate-400 mt-0.5">Introduce tus credenciales autorizadas</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Phone */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Phone input */}
             <div>
-              <label
-                htmlFor="phone"
-                className="font-mono text-xs uppercase tracking-widest mb-1 block"
-                style={{ color: 'var(--clr-muted)' }}
-              >
-                &gt; Teléfono
+              <label htmlFor="phone" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Teléfono
               </label>
-              <input
-                id="phone"
-                type="tel"
-                className="input-field"
-                placeholder="0000000000"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                required
-                autoComplete="username"
-              />
+              <div className="relative">
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  id="phone"
+                  type="tel"
+                  placeholder="Ej. 04141234567"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                  required
+                  autoComplete="username"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-900/80 border border-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
             </div>
 
-            {/* Password */}
+            {/* Password input */}
             <div>
-              <label
-                htmlFor="password"
-                className="font-mono text-xs uppercase tracking-widest mb-1 block"
-                style={{ color: 'var(--clr-muted)' }}
-              >
-                &gt; Contraseña
+              <label htmlFor="password" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Contraseña
               </label>
-              <input
-                id="password"
-                type="password"
-                className="input-field"
-                placeholder="••••••••"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-900/80 border border-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+                />
+              </div>
             </div>
 
-            {/* Error */}
+            {/* Error Message */}
             {error && (
-              <div
-                className="font-mono text-xs p-3"
-                style={{
-                  border: 'var(--border-danger)',
-                  color: 'var(--clr-danger)',
-                  background: 'rgba(255,51,0,0.08)',
-                }}
-              >
-                ⚠ {error}
+              <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+                <AlertCircle size={15} className="shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Submit */}
+            {/* Submit Button */}
             <button
               id="btn-login"
               type="submit"
               disabled={isLoading}
-              className="btn-accent mt-2"
-              style={{
-                opacity: isLoading ? 0.6 : 1,
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                minHeight: 48,
-              }}
+              className="w-full btn-primary py-3 rounded-xl flex items-center justify-center gap-2 font-bold text-sm"
             >
-              {isLoading ? '[ AUTENTICANDO... ]' : '[ ACCEDER AL SISTEMA ]'}
+              <span>{isLoading ? 'Autenticando...' : 'Acceder al Sistema'}</span>
+              <ArrowRight size={16} />
             </button>
           </form>
 
-          {/* Hint */}
-          <p className="sys-id mt-4 text-center">
-            Acceso restringido — Solo administradores municipales
+          <p className="text-[11px] text-slate-500 text-center mt-6">
+            Acceso auditado y restringido a personal de la Dirección de Transporte.
           </p>
-        </div>
-
-        {/* Bottom decoration */}
-        <div className="flex justify-between mt-4">
-          <span className="sys-id">REV: 2026.04.20</span>
-          <span className="sys-id">MTC-SYS // [SECURE]</span>
         </div>
       </div>
     </div>

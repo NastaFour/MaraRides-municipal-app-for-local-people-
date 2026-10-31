@@ -6,12 +6,12 @@ export default function DriverLayout() {
     <Stack screenOptions={{
       headerStyle: { backgroundColor: theme.colors.surface },
       headerTintColor: theme.colors.accent,
-      headerTitleStyle: { fontFamily: theme.fonts.mono, letterSpacing: 2 },
+      headerTitleStyle: { fontWeight: '700' },
       contentStyle: { backgroundColor: theme.colors.bg },
       headerShadowVisible: false,
     }}>
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="history" options={{ title: 'HISTORIAL', headerTitleAlign: 'center' }} />
+      <Stack.Screen name="history" options={{ title: 'Mis Ganancias', headerTitleAlign: 'center' }} />
     </Stack>
   );
 }
